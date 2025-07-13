@@ -40,19 +40,19 @@ timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 fail_count = count_recent_failures(username)
 if fail_count >= 3:
-    print("🚨 WARNING: This account has had 3 or more failed logins in a row.")
+    print(" WARNING: This account has had 3 or more failed logins in a row.")
 
 if result:
     stored_hash = result[0]
     if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
         outcome = "SUCCESS"
-        print("✅ Login successful!")
+        print(" Login successful!")
     else:
         outcome = "FAILURE - Wrong password"
-        print("❌ Incorrect password.")
+        print(" Incorrect password.")
 else:
     outcome = "FAILURE - No such user"
-    print("❌ No user found with that username.")
+    print(" No user found with that username.")
 
 # Save to log file
 with open("login_activity.log", "a") as log_file:
