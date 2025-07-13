@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="form-container">
+      <h2>Welcome to Secure Web System</h2>
+      <p>This is your home page. From here you can:</p>
+      <ul>
+        <li><a href="/register">Register a new account</a></li>
+        <li><a href="/login">Log in to your account</a></li>
+      </ul>
+    </div>
+  </body>
+</html>

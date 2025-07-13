@@ -11,6 +11,12 @@ app = Flask(__name__)
 #path to my database
 DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
 
+#home page route
+@app.route("/")
+def home():
+    return render_template("home.html")
+
+#register page route
 @app.route("/register", methods=["GET", "POST"])
 def register():
     #gets form data
@@ -80,6 +86,7 @@ def lock_user(username, duration=30, lock_file="login_locks.json"):
     with open(lock_file, "w") as f:
         json.dump(locks, f)
 
+#login page route
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":

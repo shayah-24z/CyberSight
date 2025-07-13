@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register</title>
+    <title>Login</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -11,23 +11,24 @@
   </head>
   <body>
     <div class="form-container">
-      <h2>Create an Account</h2>
+      <h2>Log In</h2>
       <form method="POST">
         <input type="text" name="username" placeholder="Username" required />
-        <input type="email" name="email" placeholder="Email" required />
         <input
           type="password"
           name="password"
           placeholder="Password"
           required
         />
-        <button type="submit">Register</button>
+        <button type="submit">Log In</button>
       </form>
 
       {% if request.args.get('success') %}
-      <p class="message">Registered successfully!</p>
+      <p class="message">Logged in successfully!</p>
       {% elif request.args.get('error') %}
-      <p class="message error">Username or email already exists.</p>
+      <p class="message error">Invalid username or password.</p>
+      {% elif request.args.get('locked') %}
+      <p class="message error">Account locked. Try again in 30 seconds.</p>
       {% endif %}
     </div>
   </body>
