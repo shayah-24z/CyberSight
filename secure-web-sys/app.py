@@ -16,6 +16,11 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
 def home():
     return render_template("home.html")
 
+#home page roure
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
 #register page route
 @app.route("/register", methods=["GET", "POST"])
 def register():
