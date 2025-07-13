@@ -14,7 +14,16 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
 #home page route
 @app.route("/")
 def home():
-    return render_template("home.html")
+    log_entries = []
+    try:
+        with open("login_activity.log", "r") as f:
+            log_entries = f.readlines()
+    except FileNotFoundError:
+        log_entries = ["No login activity yet."]
+    
+    # Show most recent entries first
+    log_entries = log_entries[::-1][:10]  # Last 10 entries
+    return render_template("dashboard.html", log_entries=log_entries)
 
 #home page roure
 @app.route("/dashboard")
