@@ -16,19 +16,35 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
 def home():
     return render_template("home.html")
 
-#home page roure
+#dashboard page roure
 @app.route("/dashboard")
 def dashboard():
-    log_entries = []
+    username = "spoon"  # We'll replace this with session logic later
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT is_admin FROM users WHERE username = ?", (username,))
+    result = cursor.fetchone()
+
+    is_admin = result and result[0] == 1
+
+    # Read login log
     try:
         with open("login_activity.log", "r") as f:
             log_entries = f.readlines()
     except FileNotFoundError:
         log_entries = ["No login activity yet."]
-    
-    # Show most recent entries first
-    log_entries = log_entries[::-1][:10]  # Last 10 entries
-    return render_template("dashboard.html", log_entries=log_entries)
+    log_entries = log_entries[::-1][:10]
+
+    # If admin, fetch user list
+    user_list = []
+    if is_admin:
+        cursor.execute("SELECT id, username, email, is_admin FROM users")
+        user_list = cursor.fetchall()
+
+    conn.close()
+
+    return render_template("dashboard.html", log_entries=log_entries, is_admin=is_admin, user_list=user_list)
 
 #register page route
 @app.route("/register", methods=["GET", "POST"])

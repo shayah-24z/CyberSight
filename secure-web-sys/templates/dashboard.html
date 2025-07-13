@@ -21,6 +21,29 @@
         {% endfor %}
       </ul>
 
+      {% if is_admin %}
+      <h3>🛠️ Admin Panel</h3>
+      <p>You have admin access.</p>
+
+      <h4>All Registered Users</h4>
+      <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Admin?</th>
+        </tr>
+        {% for user in user_list %}
+        <tr>
+          <td>{{ user[0] }}</td>
+          <td>{{ user[1] }}</td>
+          <td>{{ user[2] }}</td>
+          <td>{{ '✅' if user[3] else '❌' }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+
       <a href="/">⬅ Back to Home</a>
     </div>
   </body>
