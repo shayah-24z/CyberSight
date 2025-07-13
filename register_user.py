@@ -16,8 +16,8 @@ try:
     cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", 
                (username, email, hashed_password))
     conn.commit()
-    print("✅ User registered successfully!")
+    print(" User registered successfully!")
 except sqlite3.IntegrityError:
-    print("❌ That username or email already exists.")
+    print(" That username or email already exists.")
 finally:
     conn.close()
