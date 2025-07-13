@@ -13,3 +13,9 @@
 [2025-07-11 08:32:37] User: hiba — FAILURE - Wrong password
 [2025-07-11 08:36:56] User: Charlie — FAILURE - Wrong password
 [2025-07-13 11:00:13] User: bob — SUCCESS
+[2025-07-13 11:33:14] User: bob — SUCCESS
+[2025-07-13 11:39:28] User: bob — FAILURE - Wrong password
+[2025-07-13 11:39:36] User: bob — FAILURE - Wrong password
+[2025-07-13 11:39:45] User: bob — FAILURE - Wrong password
+[2025-07-13 11:41:07] User: bob — SUCCESS
+[2025-07-13 11:57:31] User: spoon — SUCCESS

@@ -14,6 +14,11 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
 #home page route
 @app.route("/")
 def home():
+    return render_template("home.html")
+
+#home page roure
+@app.route("/dashboard")
+def dashboard():
     log_entries = []
     try:
         with open("login_activity.log", "r") as f:
@@ -24,11 +29,6 @@ def home():
     # Show most recent entries first
     log_entries = log_entries[::-1][:10]  # Last 10 entries
     return render_template("dashboard.html", log_entries=log_entries)
-
-#home page roure
-@app.route("/dashboard")
-def dashboard():
-    return render_template("dashboard.html")
 
 #register page route
 @app.route("/register", methods=["GET", "POST"])
