@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, jsonify
 import sqlite3
 import bcrypt
 import os
@@ -21,7 +21,7 @@ def home():
 #dashboard page roure
 @app.route("/dashboard")
 def dashboard():
-    username = "spoon"  # We'll replace this with session logic later
+    username = session.get("username", "spoon")  # Use session if available
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -38,15 +38,86 @@ def dashboard():
         log_entries = ["No login activity yet."]
     log_entries = log_entries[::-1][:10]
 
-    # If admin, fetch user list
+    # User list for admin
     user_list = []
     if is_admin:
         cursor.execute("SELECT id, username, email, is_admin FROM users")
         user_list = cursor.fetchall()
 
+    # --- Dashboard Stats ---
+    # Total users
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+
+    # Active today (users with a SUCCESS login today)
+    today = datetime.now().strftime('%Y-%m-%d')
+    active_today_set = set()
+    try:
+        with open("login_activity.log", "r") as f:
+            for line in f:
+                if today in line and "SUCCESS" in line:
+                    user = line.split("User: ")[1].split(" ")[0]
+                    active_today_set.add(user)
+    except FileNotFoundError:
+        pass
+    active_today = len(active_today_set)
+
+    # Locked accounts (from login_locks.json)
+    locked_accounts = 0
+    try:
+        with open("login_locks.json", "r") as f:
+            locks = json.load(f)
+        now = time.time()
+        locked_accounts = sum(1 for t in locks.values() if now < t)
+    except (FileNotFoundError, json.JSONDecodeError):
+        locked_accounts = 0
+
+    # Login stats for last 7 days
+    login_stats = []
+    date_counts = {}
+    success_count = 0
+    failure_count = 0
+    try:
+        with open("login_activity.log", "r") as f:
+            for line in f:
+                if "User: " in line:
+                    # Format: [YYYY-MM-DD HH:MM:SS] User: username — OUTCOME
+                    date_str = line[1:11]
+                    outcome = line.split("—")[-1].strip()
+                    if date_str not in date_counts:
+                        date_counts[date_str] = {"success_count": 0, "failure_count": 0}
+                    if "SUCCESS" in outcome:
+                        date_counts[date_str]["success_count"] += 1
+                        success_count += 1
+                    elif "FAILURE" in outcome:
+                        date_counts[date_str]["failure_count"] += 1
+                        failure_count += 1
+    except FileNotFoundError:
+        pass
+    # Get last 7 days
+    from datetime import timedelta
+    days = [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
+    for d in days:
+        login_stats.append({
+            "date": d,
+            "success_count": date_counts.get(d, {}).get("success_count", 0),
+            "failure_count": date_counts.get(d, {}).get("failure_count", 0)
+        })
+
     conn.close()
 
-    return render_template("dashboard.html", log_entries=log_entries, is_admin=is_admin, user_list=user_list)
+    return render_template(
+        "dashboard.html",
+        log_entries=log_entries,
+        is_admin=is_admin,
+        user_list=user_list,
+        total_users=total_users,
+        active_today=active_today,
+        locked_accounts=locked_accounts,
+        login_stats=login_stats,
+        success_count=success_count,
+        failure_count=failure_count
+    )
 
 #register page route
 @app.route("/register", methods=["GET", "POST"])
@@ -171,6 +242,101 @@ def login():
         return redirect("/login?error=1")
 
     return render_template("login.html")
+
+@app.route("/api/dashboard-data")
+def api_dashboard_data():
+    username = session.get("username", "spoon")
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT is_admin FROM users WHERE username = ?", (username,))
+    result = cursor.fetchone()
+    is_admin = result and result[0] == 1
+
+    # User list for admin
+    user_list = []
+    if is_admin:
+        cursor.execute("SELECT id, username, email, is_admin FROM users")
+        user_list = cursor.fetchall()
+
+    # Total users
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+
+    # Active today
+    today = datetime.now().strftime('%Y-%m-%d')
+    active_today_set = set()
+    try:
+        with open("login_activity.log", "r") as f:
+            for line in f:
+                if today in line and "SUCCESS" in line:
+                    user = line.split("User: ")[1].split(" ")[0]
+                    active_today_set.add(user)
+    except FileNotFoundError:
+        pass
+    active_today = len(active_today_set)
+
+    # Locked accounts
+    locked_accounts = 0
+    try:
+        with open("login_locks.json", "r") as f:
+            locks = json.load(f)
+        now = time.time()
+        locked_accounts = sum(1 for t in locks.values() if now < t)
+    except (FileNotFoundError, json.JSONDecodeError):
+        locked_accounts = 0
+
+    # Login stats for last 7 days
+    login_stats = []
+    date_counts = {}
+    success_count = 0
+    failure_count = 0
+    try:
+        with open("login_activity.log", "r") as f:
+            for line in f:
+                if "User: " in line:
+                    date_str = line[1:11]
+                    outcome = line.split("—")[-1].strip()
+                    if date_str not in date_counts:
+                        date_counts[date_str] = {"success_count": 0, "failure_count": 0}
+                    if "SUCCESS" in outcome:
+                        date_counts[date_str]["success_count"] += 1
+                        success_count += 1
+                    elif "FAILURE" in outcome:
+                        date_counts[date_str]["failure_count"] += 1
+                        failure_count += 1
+    except FileNotFoundError:
+        pass
+    from datetime import timedelta
+    days = [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
+    for d in days:
+        login_stats.append({
+            "date": d,
+            "success_count": date_counts.get(d, {}).get("success_count", 0),
+            "failure_count": date_counts.get(d, {}).get("failure_count", 0)
+        })
+
+    # Recent log entries (last 10, newest first)
+    try:
+        with open("login_activity.log", "r") as f:
+            log_entries = f.readlines()
+    except FileNotFoundError:
+        log_entries = ["No login activity yet."]
+    log_entries = [entry.strip() for entry in log_entries[::-1][:10]]
+
+    conn.close()
+
+    return jsonify({
+        "total_users": total_users,
+        "active_today": active_today,
+        "locked_accounts": locked_accounts,
+        "login_stats": login_stats,
+        "success_count": success_count,
+        "failure_count": failure_count,
+        "user_list": user_list,
+        "is_admin": is_admin,
+        "log_entries": log_entries
+    })
 
 #runs server
 if __name__ == "__main__":
