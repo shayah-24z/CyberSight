@@ -11,9 +11,26 @@
         body { background: #f8f9fa; }
         .card { margin-bottom: 1rem; }
         .dashboard-title { margin: 2rem 0 1rem 0; }
+        /* Dark mode styles */
+        body.dark-mode { background: #181a1b !important; color: #e0e0e0; }
+        body.dark-mode .card { background: #23272b; color: #e0e0e0; border-color: #333; }
+        body.dark-mode .table { color: #e0e0e0; }
+        body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) { background-color: #23272b; }
+        body.dark-mode .list-group-item { background: #23272b; color: #e0e0e0; border-color: #333; }
+        body.dark-mode .btn-secondary { background: #333; color: #e0e0e0; border: none; }
+        .dark-toggle {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
+<!-- Dark mode toggle button -->
+<button class="btn btn-outline-secondary dark-toggle" id="darkModeToggle" title="Toggle dark mode">
+    🌙
+</button>
 <div class="container">
     <h1 class="dashboard-title text-center">Admin Dashboard</h1>
     <!-- Summary Cards -->
@@ -108,7 +125,44 @@
         <a href="/" class="btn btn-secondary">⬅ Back to Home</a>
     </div>
 </div>
+<!-- Drilldown Modal -->
+<div class="modal fade" id="drilldownModal" tabindex="-1" aria-labelledby="drilldownModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="drilldownModalLabel">Login Events for <span id="drilldownDate"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group" id="drilldownList"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Dark mode logic
+const darkModeToggle = document.getElementById('darkModeToggle');
+function setDarkMode(on) {
+    if (on) {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.textContent = '☀️';
+    } else {
+        document.body.classList.remove('dark-mode');
+        darkModeToggle.textContent = '🌙';
+    }
+    localStorage.setItem('darkMode', on ? '1' : '0');
+}
+darkModeToggle.addEventListener('click', function() {
+    setDarkMode(!document.body.classList.contains('dark-mode'));
+});
+// On load, set mode from localStorage
+if (localStorage.getItem('darkMode') === '1') {
+    setDarkMode(true);
+} else {
+    setDarkMode(false);
+}
+
 // Initial data from server-rendered context
 const initialLoginStats = {{ login_stats|tojson|safe }};
 const initialSuccessCount = {{ success_count|default(0) }};
@@ -139,7 +193,8 @@ const lineChart = new Chart(lineCtx, {
     },
     options: {
         responsive: true,
-        plugins: { legend: { position: 'top' } }
+        plugins: { legend: { position: 'top' } },
+        onClick: null // Initialize onClick to null
     }
 });
 
@@ -187,8 +242,6 @@ function updateDashboard() {
                 });
             }
 
-            // Optionally, update recent log entries if you add them to the API in the future
-            // document.getElementById('logEntries').innerHTML = ...
             // Update recent log entries
             const logEntriesList = document.getElementById('logEntries');
             logEntriesList.innerHTML = '';
@@ -201,6 +254,38 @@ function updateDashboard() {
         });
 }
 setInterval(updateDashboard, 5000); // Update every 5 seconds
+
+// Drilldown on line chart
+lineChart.options.onClick = function(evt, elements) {
+    if (elements && elements.length > 0) {
+        const idx = elements[0].index;
+        const date = lineChart.data.labels[idx];
+        document.getElementById('drilldownDate').textContent = date;
+        // Fetch login events for this day
+        fetch(`/api/logins-for-day?date=${date}`)
+            .then(response => response.json())
+            .then(entries => {
+                const list = document.getElementById('drilldownList');
+                list.innerHTML = '';
+                if (entries.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.textContent = 'No login events for this day.';
+                    list.appendChild(li);
+                } else {
+                    entries.forEach(entry => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = entry;
+                        list.appendChild(li);
+                    });
+                }
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('drilldownModal'));
+                modal.show();
+            });
+    }
+};
 </script>
 </body>
 </html>

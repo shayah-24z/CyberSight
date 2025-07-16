@@ -338,6 +338,21 @@ def api_dashboard_data():
         "log_entries": log_entries
     })
 
+@app.route("/api/logins-for-day")
+def api_logins_for_day():
+    date = request.args.get('date')
+    if not date:
+        return jsonify([])
+    entries = []
+    try:
+        with open("login_activity.log", "r") as f:
+            for line in f:
+                if line.startswith(f"[{date}"):
+                    entries.append(line.strip())
+    except FileNotFoundError:
+        pass
+    return jsonify(entries)
+
 #runs server
 if __name__ == "__main__":
     app.run(debug=True)
