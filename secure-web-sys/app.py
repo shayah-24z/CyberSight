@@ -64,13 +64,16 @@ def dashboard():
 
     # Locked accounts (from login_locks.json)
     locked_accounts = 0
+    locked_users = []
     try:
         with open("login_locks.json", "r") as f:
             locks = json.load(f)
         now = time.time()
-        locked_accounts = sum(1 for t in locks.values() if now < t)
+        locked_users = [u for u, t in locks.items() if now < t]
+        locked_accounts = len(locked_users)
     except (FileNotFoundError, json.JSONDecodeError):
         locked_accounts = 0
+        locked_users = []
 
     # Login stats for last 7 days
     login_stats = []
@@ -116,7 +119,9 @@ def dashboard():
         locked_accounts=locked_accounts,
         login_stats=login_stats,
         success_count=success_count,
-        failure_count=failure_count
+        failure_count=failure_count,
+        locked_users=locked_users,
+        session=session  # Pass session to template
     )
 
 #register page route
@@ -278,13 +283,16 @@ def api_dashboard_data():
 
     # Locked accounts
     locked_accounts = 0
+    locked_users = []
     try:
         with open("login_locks.json", "r") as f:
             locks = json.load(f)
         now = time.time()
-        locked_accounts = sum(1 for t in locks.values() if now < t)
+        locked_users = [u for u, t in locks.items() if now < t]
+        locked_accounts = len(locked_users)
     except (FileNotFoundError, json.JSONDecodeError):
         locked_accounts = 0
+        locked_users = []
 
     # Login stats for last 7 days
     login_stats = []
@@ -335,7 +343,8 @@ def api_dashboard_data():
         "failure_count": failure_count,
         "user_list": user_list,
         "is_admin": is_admin,
-        "log_entries": log_entries
+        "log_entries": log_entries,
+        "locked_users": locked_users
     })
 
 @app.route("/api/logins-for-day")

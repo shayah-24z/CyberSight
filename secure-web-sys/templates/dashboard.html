@@ -5,6 +5,8 @@
     <title>Admin Dashboard</title>
     <!-- Bootstrap CSS for layout and cards -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -100,6 +102,7 @@
                             <th>Username</th>
                             <th>Email</th>
                             <th>Admin</th>
+                            <th>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -109,6 +112,22 @@
                             <td>{{ user[1] }}</td>
                             <td>{{ user[2] }}</td>
                             <td>{% if user[3] == 1 %}✔️{% else %}❌{% endif %}</td>
+                            <td>
+                                {% if user[1] != session['username'] %}
+                                <div class="btn-group" role="group">
+                                    {% if user[1] in locked_users %}
+                                    <button class="btn btn-sm btn-success unlock-btn" data-bs-toggle="tooltip" title="Unlock user" data-username="{{ user[1] }}"><i class="bi bi-unlock"></i></button>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-danger lock-btn" data-bs-toggle="tooltip" title="Lock user" data-username="{{ user[1] }}"><i class="bi bi-lock"></i></button>
+                                    {% endif %}
+                                    {% if user[3] == 1 %}
+                                    <button class="btn btn-sm btn-secondary demote-btn" data-bs-toggle="tooltip" title="Remove admin" data-username="{{ user[1] }}"><i class="bi bi-person-dash"></i></button>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-primary promote-btn" data-bs-toggle="tooltip" title="Make admin" data-username="{{ user[1] }}"><i class="bi bi-person-plus"></i></button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -149,6 +168,8 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Make the current username available to JS
+const currentUsername = {{ session['username']|default('null')|tojson|safe }};
 // Dark mode logic
 const darkModeToggle = document.getElementById('darkModeToggle');
 function setDarkMode(on) {
@@ -243,11 +264,39 @@ function updateDashboard() {
             if (data.is_admin) {
                 const userTableBody = document.querySelector('#userTable tbody');
                 userTableBody.innerHTML = '';
+                const lockedUsers = data.locked_users || [];
                 data.user_list.forEach((user, i) => {
+                    const isSelf = user[1] === currentUsername;
+                    let actions = '';
+                    if (!isSelf) {
+                        actions += '<div class="btn-group" role="group">';
+                        if (lockedUsers.includes(user[1])) {
+                            actions += `<button class="btn btn-sm btn-success unlock-btn" data-bs-toggle="tooltip" title="Unlock user" data-username="${user[1]}"><i class="bi bi-unlock"></i></button>`;
+                        } else {
+                            actions += `<button class="btn btn-sm btn-danger lock-btn" data-bs-toggle="tooltip" title="Lock user" data-username="${user[1]}"><i class="bi bi-lock"></i></button>`;
+                        }
+                        if (user[3] == 1) {
+                            actions += `<button class="btn btn-sm btn-secondary demote-btn" data-bs-toggle="tooltip" title="Remove admin" data-username="${user[1]}"><i class="bi bi-person-dash"></i></button>`;
+                        } else {
+                            actions += `<button class="btn btn-sm btn-primary promote-btn" data-bs-toggle="tooltip" title="Make admin" data-username="${user[1]}"><i class="bi bi-person-plus"></i></button>`;
+                        }
+                        actions += '</div>';
+                    }
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${user[0]}</td><td>${user[1]}</td><td>${user[2]}</td><td>${user[3] == 1 ? '✔️' : '❌'}</td>`;
+                    tr.innerHTML = `
+                        <td>${user[0]}</td>
+                        <td>${user[1]}</td>
+                        <td>${user[2]}</td>
+                        <td>${user[3] == 1 ? '✔️' : '❌'}</td>
+                        <td>${actions}</td>`;
                     userTableBody.appendChild(tr);
                     setTimeout(() => tr.classList.add('fade-in'), 100 + i * 60);
+                });
+                attachAdminActionHandlers();
+                // Enable tooltips
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                  return new bootstrap.Tooltip(tooltipTriggerEl);
                 });
             }
 
@@ -296,6 +345,52 @@ lineChart.options.onClick = function(evt, elements) {
     }
 };
 
+// Helper to check if a user is locked (from the dashboard data)
+function isUserLocked(username, lockedAccounts, userList) {
+    // This is a placeholder; you may want to pass locked users from the backend for accuracy
+    // For now, always show both lock/unlock buttons
+    return false;
+}
+// Attach admin action handlers (call after table is rendered)
+function attachAdminActionHandlers() {
+    document.querySelectorAll('.lock-btn').forEach(btn => {
+        btn.onclick = function() {
+            fetch('/api/lock-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: btn.dataset.username })
+            }).then(() => updateDashboard());
+        };
+    });
+    document.querySelectorAll('.unlock-btn').forEach(btn => {
+        btn.onclick = function() {
+            fetch('/api/unlock-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: btn.dataset.username })
+            }).then(() => updateDashboard());
+        };
+    });
+    document.querySelectorAll('.promote-btn').forEach(btn => {
+        btn.onclick = function() {
+            fetch('/api/set-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: btn.dataset.username, is_admin: true })
+            }).then(() => updateDashboard());
+        };
+    });
+    document.querySelectorAll('.demote-btn').forEach(btn => {
+        btn.onclick = function() {
+            fetch('/api/set-admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: btn.dataset.username, is_admin: false })
+            }).then(() => updateDashboard());
+        };
+    });
+}
+
 // Fade-in animation for cards and table rows
 window.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.card').forEach(function(card, i) {
@@ -303,6 +398,11 @@ window.addEventListener('DOMContentLoaded', function() {
     });
     document.querySelectorAll('tr').forEach(function(row, i) {
         setTimeout(() => row.classList.add('fade-in'), 400 + i * 60);
+    });
+    attachAdminActionHandlers();
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
 </script>
