@@ -9,7 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background: #f8f9fa; }
-        .card { margin-bottom: 1rem; }
+        .card { margin-bottom: 1rem; transition: box-shadow 0.3s, transform 0.3s, opacity 0.8s, top 0.8s; opacity: 0; top: 30px; }
+        .card.fade-in { opacity: 1; top: 0; }
         .dashboard-title { margin: 2rem 0 1rem 0; }
         /* Dark mode styles */
         body.dark-mode { background: #181a1b !important; color: #e0e0e0; }
@@ -24,6 +25,13 @@
             right: 2rem;
             z-index: 10;
         }
+        /* Card hover effect */
+        .card:hover { box-shadow: 0 0 24px 0 rgba(0,0,0,0.18); transform: translateY(-4px) scale(1.02); }
+        /* Table row fade-in and hover */
+        tr { transition: background 0.3s, color 0.3s, opacity 0.8s, top 0.8s; opacity: 0; top: 30px; }
+        tr.fade-in { opacity: 1; top: 0; }
+        tr:hover { background: #e8f5ee; color: #005a30; }
+        body.dark-mode tr:hover { background: #23272b; color: #7fffd4; }
     </style>
 </head>
 <body>
@@ -235,10 +243,11 @@ function updateDashboard() {
             if (data.is_admin) {
                 const userTableBody = document.querySelector('#userTable tbody');
                 userTableBody.innerHTML = '';
-                data.user_list.forEach(user => {
+                data.user_list.forEach((user, i) => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `<td>${user[0]}</td><td>${user[1]}</td><td>${user[2]}</td><td>${user[3] == 1 ? '✔️' : '❌'}</td>`;
                     userTableBody.appendChild(tr);
+                    setTimeout(() => tr.classList.add('fade-in'), 100 + i * 60);
                 });
             }
 
@@ -286,6 +295,16 @@ lineChart.options.onClick = function(evt, elements) {
             });
     }
 };
+
+// Fade-in animation for cards and table rows
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.card').forEach(function(card, i) {
+        setTimeout(() => card.classList.add('fade-in'), 100 + i * 120);
+    });
+    document.querySelectorAll('tr').forEach(function(row, i) {
+        setTimeout(() => row.classList.add('fade-in'), 400 + i * 60);
+    });
+});
 </script>
 </body>
 </html>
