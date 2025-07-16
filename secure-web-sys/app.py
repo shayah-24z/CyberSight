@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 import bcrypt
 import os
@@ -7,6 +7,8 @@ import time
 from datetime import datetime
 
 app = Flask(__name__)
+
+app.secret_key = "spoon"
 
 #path to my database
 DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
@@ -128,20 +130,31 @@ def login():
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT password, is_admin FROM users WHERE username = ?", (username,))
         result = cursor.fetchone()
         conn.close()
 
-        from datetime import datetime
+    
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         if result:
-            stored_hash = result[0]
+            stored_hash, is_admin = result
             if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+               
                 outcome = "SUCCESS"
                 with open("login_activity.log", "a") as f:
                     f.write(f"[{timestamp}] User: {username} — {outcome}\n")
-                return redirect("/login?success=1")
+
+            
+                session["username"] = username
+                session["is_admin"] = is_admin == 1
+
+              
+                if session["is_admin"]:
+                    return redirect("/dashboard")
+                else:
+                    return redirect("/sandbox")
+
             else:
                 outcome = "FAILURE - Wrong password"
         else:
