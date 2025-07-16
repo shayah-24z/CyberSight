@@ -4,31 +4,119 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <style>
+      body {
+        background: #e8f5ee;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+      }
+      .register-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 32px 0 rgba(0, 90, 48, 0.08);
+        padding: 2.5rem 2rem 2rem 2rem;
+        max-width: 400px;
+        width: 100%;
+        margin: 2rem auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .register-card h2 {
+        color: #005a30;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-align: center;
+      }
+      .register-card form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .register-card input {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        margin-bottom: 1.2rem;
+        border: 1px solid #b6e2d3;
+        border-radius: 8px;
+        font-size: 1rem;
+        background: #f3f9f6;
+        transition: border 0.2s;
+        text-align: left;
+      }
+      .register-card input:focus {
+        border: 1.5px solid #005a30;
+        outline: none;
+        background: #e8f5ee;
+      }
+      .register-card button {
+        width: 100%;
+        padding: 0.8rem;
+        background: #005a30;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+        transition: background 0.2s;
+        text-align: center;
+      }
+      .register-card button:hover {
+        background: #007a4d;
+      }
+      .register-card .message {
+        margin-top: 1rem;
+        color: #22c55e;
+        font-weight: bold;
+        text-align: center;
+      }
+      .register-card .error {
+        color: #ef4444;
+      }
+      .register-card .login-link {
+        margin-top: 1.2rem;
+        color: #005a30;
+        text-align: center;
+        font-size: 1rem;
+      }
+      .register-card .login-link a {
+        color: #005a30;
+        text-decoration: underline;
+        font-weight: bold;
+        transition: color 0.2s;
+      }
+      .register-card .login-link a:hover {
+        color: #007a4d;
+      }
+    </style>
   </head>
   <body>
-    <div class="form-container">
+    <div class="register-card">
       <h2>Create an Account</h2>
       <form method="POST">
         <input type="text" name="username" placeholder="Username" required />
         <input type="email" name="email" placeholder="Email" required />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-        />
+        <input type="password" name="password" placeholder="Password" required />
         <button type="submit">Register</button>
       </form>
-
       {% if request.args.get('success') %}
       <p class="message">Registered successfully!</p>
       {% elif request.args.get('error') %}
       <p class="message error">Username or email already exists.</p>
       {% endif %}
+      <div class="login-link">
+        Already have an account? <a href="/login">Log in here</a>
+      </div>
     </div>
   </body>
 </html>

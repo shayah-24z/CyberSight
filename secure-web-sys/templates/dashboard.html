@@ -10,30 +10,41 @@
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #f8f9fa; }
-        .card { margin-bottom: 1rem; transition: box-shadow 0.3s, transform 0.3s, opacity 0.8s, top 0.8s; opacity: 0; top: 30px; }
+        body { background: #e8f5ee; color: #222; }
+        .card { margin-bottom: 1rem; transition: box-shadow 0.3s, transform 0.3s, opacity 0.8s, top 0.8s; opacity: 0; top: 30px; background: #fff; border-radius: 16px; border: none; color: #222; }
         .card.fade-in { opacity: 1; top: 0; }
-        .dashboard-title { margin: 2rem 0 1rem 0; }
-        /* Dark mode styles */
-        body.dark-mode { background: #181a1b !important; color: #e0e0e0; }
-        body.dark-mode .card { background: #23272b; color: #e0e0e0; border-color: #333; }
-        body.dark-mode .table { color: #e0e0e0; }
-        body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) { background-color: #23272b; }
-        body.dark-mode .list-group-item { background: #23272b; color: #e0e0e0; border-color: #333; }
-        body.dark-mode .btn-secondary { background: #333; color: #e0e0e0; border: none; }
-        .dark-toggle {
-            position: absolute;
-            top: 1.5rem;
-            right: 2rem;
-            z-index: 10;
-        }
+        .dashboard-title { margin: 2rem 0 1rem 0; color: #005a30; text-shadow: none; }
+        .card-header { background: #fff !important; color: #005a30 !important; border-radius: 16px 16px 0 0; border: none; border-bottom: 1px solid #e0e0e0; letter-spacing: 1px; font-weight: bold; }
+        .table { background: #fff; border-radius: 0 0 16px 16px; overflow: hidden; color: #222; }
+        .table-striped > tbody > tr:nth-of-type(odd) { background-color: #f3f9f6; }
+        .table-hover > tbody > tr:hover { background-color: #d1f5e0; color: #005a30; }
+        .table thead { background: #e8f5ee; color: #005a30; border-bottom: 2px solid #005a30; }
+        .table th, .table td { vertical-align: middle; }
+        .rounded { border-radius: 16px !important; }
+        .list-group-item { background: #fff; color: #222; border: none; }
+        .btn-primary { background: #005a30; border: none; color: #fff; }
+        .btn-primary:hover, .btn-primary:focus { background: #007a4d; color: #fff; }
+        .btn-secondary { background: #e8f5ee; border: none; color: #005a30; }
+        .btn-secondary:hover, .btn-secondary:focus { background: #d1f5e0; color: #005a30; }
+        .btn-success { background: #22c55e; border: none; color: #fff; }
+        .btn-success:hover, .btn-success:focus { background: #198754; color: #fff; }
+        .btn-danger { background: #ef4444; border: none; color: #fff; }
+        .btn-danger:hover, .btn-danger:focus { background: #b91c1c; color: #fff; }
+        .btn-warning { background: #f59e42; border: none; color: #fff; }
+        .btn-warning:hover, .btn-warning:focus { background: #d97706; color: #fff; }
+        .btn-group .btn { margin-right: 0.25rem; }
+        .btn-group .btn:last-child { margin-right: 0; }
+        .avatar-initials { background: #005a30; color: #fff; text-shadow: none; }
+        .avatar-admin { background: #22c55e !important; color: #fff !important; }
+        .avatar-locked { background: #ef4444 !important; color: #fff !important; }
+        .sticky-top { position: sticky; top: 0; z-index: 2; }
         /* Card hover effect */
-        .card:hover { box-shadow: 0 0 24px 0 rgba(0,0,0,0.18); transform: translateY(-4px) scale(1.02); }
+        .card:hover { box-shadow: 0 0 24px 0 #005a30; transform: translateY(-4px) scale(1.02); }
         /* Table row fade-in and hover */
         tr { transition: background 0.3s, color 0.3s, opacity 0.8s, top 0.8s; opacity: 0; top: 30px; }
         tr.fade-in { opacity: 1; top: 0; }
-        tr:hover { background: #e8f5ee; color: #005a30; }
-        body.dark-mode tr:hover { background: #23272b; color: #7fffd4; }
+        tr:hover { background: #d1f5e0 !important; color: #005a30; }
+        .dark-toggle { display: none; }
     </style>
 </head>
 <body>
@@ -93,45 +104,53 @@
     <div class="row">
         <div class="col-md-7">
             <div class="card shadow">
-                <div class="card-body">
-                    <h5 class="card-title">User List</h5>
-                    <table class="table table-striped" id="userTable">
-                        <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Admin</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for user in user_list %}
-                        <tr>
-                            <td>{{ user[0] }}</td>
-                            <td>{{ user[1] }}</td>
-                            <td>{{ user[2] }}</td>
-                            <td>{% if user[3] == 1 %}✔️{% else %}❌{% endif %}</td>
-                            <td>
-                                {% if user[1] != session['username'] %}
-                                <div class="btn-group" role="group">
-                                    {% if user[1] in locked_users %}
-                                    <button class="btn btn-sm btn-success unlock-btn" data-bs-toggle="tooltip" title="Unlock user" data-username="{{ user[1] }}"><i class="bi bi-unlock"></i></button>
-                                    {% else %}
-                                    <button class="btn btn-sm btn-danger lock-btn" data-bs-toggle="tooltip" title="Lock user" data-username="{{ user[1] }}"><i class="bi bi-lock"></i></button>
+                <div class="card-body p-0">
+                    <div class="card-header bg-primary text-white fw-bold fs-5">User List</div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle mb-0 rounded" id="userTable" style="overflow:hidden;">
+                            <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width:48px;"></th>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Admin</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for user in user_list %}
+                            <tr>
+                                <td>
+                                    <div class="rounded-circle avatar-initials {% if user[3] == 1 %}avatar-admin{% endif %}{% if user[1] in locked_users %} avatar-locked{% endif %} d-flex align-items-center justify-content-center" style="width:36px;height:36px;font-weight:bold;font-size:1.1rem;">
+                                        {{ user[1][0]|upper }}
+                                    </div>
+                                </td>
+                                <td>{{ user[0] }}</td>
+                                <td>{{ user[1] }}</td>
+                                <td>{{ user[2] }}</td>
+                                <td>{% if user[3] == 1 %}✔️{% else %}❌{% endif %}</td>
+                                <td>
+                                    {% if user[1] != session['username'] %}
+                                    <div class="btn-group" role="group">
+                                        {% if user[1] in locked_users %}
+                                        <button class="btn btn-sm btn-success unlock-btn" data-bs-toggle="tooltip" title="Unlock user" data-username="{{ user[1] }}"><i class="bi bi-unlock"></i></button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-danger lock-btn" data-bs-toggle="tooltip" title="Lock user" data-username="{{ user[1] }}"><i class="bi bi-lock"></i></button>
+                                        {% endif %}
+                                        {% if user[3] == 1 %}
+                                        <button class="btn btn-sm btn-secondary demote-btn" data-bs-toggle="tooltip" title="Remove admin" data-username="{{ user[1] }}"><i class="bi bi-person-dash"></i></button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-primary promote-btn" data-bs-toggle="tooltip" title="Make admin" data-username="{{ user[1] }}"><i class="bi bi-person-plus"></i></button>
+                                        {% endif %}
+                                    </div>
                                     {% endif %}
-                                    {% if user[3] == 1 %}
-                                    <button class="btn btn-sm btn-secondary demote-btn" data-bs-toggle="tooltip" title="Remove admin" data-username="{{ user[1] }}"><i class="bi bi-person-dash"></i></button>
-                                    {% else %}
-                                    <button class="btn btn-sm btn-primary promote-btn" data-bs-toggle="tooltip" title="Make admin" data-username="{{ user[1] }}"><i class="bi bi-person-plus"></i></button>
-                                    {% endif %}
-                                </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -207,22 +226,22 @@ const lineChart = new Chart(lineCtx, {
             {
                 label: 'Success',
                 data: initialLoginStats.map(item => item.success_count),
-                borderColor: 'green',
-                backgroundColor: 'rgba(0,255,0,0.1)',
+                borderColor: '#005a30',
+                backgroundColor: 'rgba(0,90,48,0.08)',
                 fill: true
             },
             {
                 label: 'Failure',
                 data: initialLoginStats.map(item => item.failure_count),
-                borderColor: 'red',
-                backgroundColor: 'rgba(255,0,0,0.1)',
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239,68,68,0.08)',
                 fill: true
             }
         ]
     },
     options: {
         responsive: true,
-        plugins: { legend: { position: 'top' } },
+        plugins: { legend: { position: 'top', labels: { color: '#005a30' } } },
         onClick: null // Initialize onClick to null
     }
 });
@@ -235,8 +254,11 @@ const pieChart = new Chart(pieCtx, {
         labels: ['Success', 'Failure'],
         datasets: [{
             data: [initialSuccessCount, initialFailureCount],
-            backgroundColor: ['green', 'red']
+            backgroundColor: ['#005a30', '#ef4444']
         }]
+    },
+    options: {
+        plugins: { legend: { labels: { color: '#005a30' } } }
     }
 });
 
@@ -283,7 +305,9 @@ function updateDashboard() {
                         actions += '</div>';
                     }
                     const tr = document.createElement('tr');
+                    const avatarClass = `rounded-circle avatar-initials d-flex align-items-center justify-content-center${user[3] == 1 ? ' avatar-admin' : ''}${lockedUsers.includes(user[1]) ? ' avatar-locked' : ''}`;
                     tr.innerHTML = `
+                        <td><div class='${avatarClass}' style='width:36px;height:36px;font-weight:bold;font-size:1.1rem;'>${user[1][0].toUpperCase()}</div></td>
                         <td>${user[0]}</td>
                         <td>${user[1]}</td>
                         <td>${user[2]}</td>
