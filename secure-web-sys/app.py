@@ -10,18 +10,18 @@ app = Flask(__name__)
 
 app.secret_key = "spoon"
 
-#path to my database
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "secure_app.db")
 
-#home page route
+
 @app.route("/")
 def home():
     return render_template("login.html")
 
-#dashboard page roure
+
 @app.route("/dashboard")
 def dashboard():
-    username = session.get("username", "spoon")  # Use session if available
+    username = session.get("username", "spoon") 
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -30,7 +30,7 @@ def dashboard():
 
     is_admin = result and result[0] == 1
 
-    # Read login log
+   
     try:
         with open("login_activity.log", "r") as f:
             log_entries = f.readlines()
@@ -38,14 +38,13 @@ def dashboard():
         log_entries = ["No login activity yet."]
     log_entries = log_entries[::-1][:10]
 
-    # User list for admin
+
     user_list = []
     if is_admin:
         cursor.execute("SELECT id, username, email, is_admin FROM users")
         user_list = cursor.fetchall()
 
-    # --- Dashboard Stats ---
-    # Total users
+   
     cursor.execute("SELECT COUNT(*) FROM users")
     total_users = cursor.fetchone()[0]
 
@@ -75,7 +74,7 @@ def dashboard():
         locked_accounts = 0
         locked_users = []
 
-    # Login stats for last 7 days
+  
     login_stats = []
     date_counts = {}
     success_count = 0
@@ -84,7 +83,7 @@ def dashboard():
         with open("login_activity.log", "r") as f:
             for line in f:
                 if "User: " in line:
-                    # Format: [YYYY-MM-DD HH:MM:SS] User: username — OUTCOME
+              
                     date_str = line[1:11]
                     outcome = line.split("—")[-1].strip()
                     if date_str not in date_counts:
@@ -97,7 +96,7 @@ def dashboard():
                         failure_count += 1
     except FileNotFoundError:
         pass
-    # Get last 7 days
+ 
     from datetime import timedelta
     days = [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
     for d in days:
@@ -121,7 +120,7 @@ def dashboard():
         success_count=success_count,
         failure_count=failure_count,
         locked_users=locked_users,
-        session=session  # Pass session to template
+        session=session 
     )
 
 #register page route
@@ -135,21 +134,21 @@ def register():
 
         hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
-    #connets to database referenced earlier
+    
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
         try:
-            #insers user into database
+            
             cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
                            (username, email, hashed_pw))
             conn.commit()
             return redirect("/register?success=1")
         except sqlite3.IntegrityError:
-            return redirect("/register?error=1") #redirects if user/email exists
+            return redirect("/register?error=1") 
         finally:
             conn.close()
-    #shows registration form
+    
     return render_template("register.html")
 
 def count_recent_failures(username, log_path="login_activity.log", limit=3):
@@ -194,7 +193,7 @@ def lock_user(username, duration=30, lock_file="login_locks.json"):
     with open(lock_file, "w") as f:
         json.dump(locks, f)
 
-#login page route
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -258,17 +257,17 @@ def api_dashboard_data():
     result = cursor.fetchone()
     is_admin = result and result[0] == 1
 
-    # User list for admin
+    
     user_list = []
     if is_admin:
         cursor.execute("SELECT id, username, email, is_admin FROM users")
         user_list = cursor.fetchall()
 
-    # Total users
+    
     cursor.execute("SELECT COUNT(*) FROM users")
     total_users = cursor.fetchone()[0]
 
-    # Active today
+   
     today = datetime.now().strftime('%Y-%m-%d')
     active_today_set = set()
     try:
@@ -294,7 +293,7 @@ def api_dashboard_data():
         locked_accounts = 0
         locked_users = []
 
-    # Login stats for last 7 days
+    
     login_stats = []
     date_counts = {}
     success_count = 0
@@ -362,6 +361,6 @@ def api_logins_for_day():
         pass
     return jsonify(entries)
 
-#runs server
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,7 +1,7 @@
 import sqlite3
 
-DB_PATH = "secure-web-sys/secure_app.db"  # update if different
-username = "spoon"  # change this
+DB_PATH = "secure-web-sys/secure_app.db" 
+username = "spoon" 
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()

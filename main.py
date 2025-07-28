@@ -42,9 +42,9 @@ while True:
                 with open(log_path, "r") as log_file:
                     lines = log_file.readlines()
             except FileNotFoundError:
-                return 0  # no log = no failures yet
+                return 0
 
-            #Check recent failures for this username
+   
             failures = 0
             for line in reversed(lines):
                 if f"User: {username}" in line:
@@ -88,7 +88,7 @@ while True:
             outcome = "FAILURE - No such user"
             print(" No user found with that username.")
 
-        # Save to log file
+      
         with open("login_activity.log", "a") as log_file:
             log_file.write(f"[{timestamp}] User: {username} — {outcome}\n")
      

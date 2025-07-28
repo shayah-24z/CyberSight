@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_PATH = "secure-web-sys/secure_app.db"  # update if needed
+DB_PATH = "secure-web-sys/secure_app.db" 
 
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
