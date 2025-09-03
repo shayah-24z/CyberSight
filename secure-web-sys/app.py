@@ -247,6 +247,11 @@ def login():
 
     return render_template("login.html")
 
+@app.route("/sandbox")
+def sandbox():
+    # Simple page for non-admin users after login
+    return render_template("home.html")
+
 @app.route("/api/dashboard-data")
 def api_dashboard_data():
     username = session.get("username", "spoon")
@@ -360,6 +365,61 @@ def api_logins_for_day():
     except FileNotFoundError:
         pass
     return jsonify(entries)
+
+
+# Admin actions used by dashboard buttons
+@app.route("/api/lock-user", methods=["POST"])
+def api_lock_user():
+    if not session.get("is_admin"):
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(silent=True) or {}
+    username = data.get("username")
+    duration = int(data.get("duration", 1800))  # default 30 minutes
+    if not username:
+        return jsonify({"error": "username required"}), 400
+    lock_user(username, duration=duration)
+    return jsonify({"status": "locked", "username": username, "duration": duration})
+
+
+@app.route("/api/unlock-user", methods=["POST"])
+def api_unlock_user():
+    if not session.get("is_admin"):
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(silent=True) or {}
+    username = data.get("username")
+    if not username:
+        return jsonify({"error": "username required"}), 400
+    # Remove user from lock file
+    try:
+        with open("login_locks.json", "r") as f:
+            locks = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        locks = {}
+    if username in locks:
+        del locks[username]
+        with open("login_locks.json", "w") as f:
+            json.dump(locks, f)
+    return jsonify({"status": "unlocked", "username": username})
+
+
+@app.route("/api/set-admin", methods=["POST"])
+def api_set_admin():
+    if not session.get("is_admin"):
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(silent=True) or {}
+    target_username = data.get("username")
+    is_admin = bool(data.get("is_admin"))
+    if not target_username:
+        return jsonify({"error": "username required"}), 400
+    # Optional: prevent changing your own admin status
+    if target_username == session.get("username"):
+        return jsonify({"error": "cannot change own role"}), 400
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET is_admin = ? WHERE username = ?", (1 if is_admin else 0, target_username))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "updated", "username": target_username, "is_admin": is_admin})
 
 
 if __name__ == "__main__":
